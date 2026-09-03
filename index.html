@@ -76,12 +76,9 @@
             return t * t * (3 - 2 * t);
         }
 
-        // ==========================================
         // ЗАГРУЗКА ВАШЕГО ЛОГОТИПА ИЗ SVG
-        // ==========================================
         const logoImg = new Image();
-        logoImg.crossOrigin = "anonymous"; // Обязательно для GitHub
-        // ПРАВИЛЬНЫЙ АДРЕС (raw.githubusercontent.com)
+        logoImg.crossOrigin = "anonymous";
         logoImg.src = "https://raw.githubusercontent.com/kviktoriia2018-creator/logo-data/main/Frame%201948755463.svg";
 
         const logoData = [];
@@ -97,7 +94,7 @@
             ctx.drawImage(logoImg, 0, 0, logoSize, logoSize);
             const imgData = ctx.getImageData(0, 0, logoSize, logoSize).data;
 
-            const step = 2; // Плотность точек (меньше = плотнее)
+            const step = 2;
             for (let y = 0; y < logoSize; y += step) {
                 for (let x = 0; x < logoSize; x += step) {
                     const index = (y * logoSize + x) * 4;
@@ -117,7 +114,6 @@
             const idx = Math.floor(i / 5) % logoData.length;
             return logoData[idx];
         }
-        // ==========================================
 
         // ЛОГИКА ЛУЧЕЙ (12 аккуратных лучей)
         function getRayPoint(i) {
@@ -135,8 +131,8 @@
             };
         }
 
-        // ЛОГИКА ЭКВАЛАЙЗЕРА (равноудаленные точки)
-        function getEqPoint(i) {
+        // ЛОГИКА ЭКВАЛАЙЗЕРА (ИСПРАВЛЕНА: теперь принимает time)
+        function getEqPoint(i, time) {
             const eqSpacing = 10; 
             const eqIdx = Math.floor(i / eqSpacing);
             const eqCount = Math.floor(COUNT / eqSpacing);
@@ -168,7 +164,6 @@
             const posAttr = geometry.attributes.position;
             const colAttr = geometry.attributes.color;
 
-            // Фазы времени (0-5 Лого, 5-10 Лучи, 10-15 Эквалайзер, 15-20 Возврат в Лого)
             const cycleTime = time % 20.0;
 
             let mix1 = 0, mix2 = 0, mix3 = 0;
@@ -190,19 +185,16 @@
             for(let i=0; i<COUNT; i++) {
                 const logo = getLogoPoint(i);
                 const ray = getRayPoint(i);
-                const eq = getEqPoint(i);
+                const eq = getEqPoint(i, time); // Передаем time
 
-                // Смешивание Лого и Лучей
                 let tx = logo.x * (1 - mix1) + ray.x * mix1;
                 let ty = logo.y * (1 - mix1) + ray.y * mix1;
                 let tz = logo.z * (1 - mix1) + ray.z * mix1;
 
-                // Смешивание с Эквалайзером
                 tx = tx * (1 - mix2) + eq.x * mix2;
                 ty = ty * (1 - mix2) + eq.y * mix2;
                 tz = tz * (1 - mix2) + eq.z * mix2;
 
-                // Смешивание с Лого (возврат)
                 tx = tx * (1 - mix3) + logo.x * mix3;
                 ty = ty * (1 - mix3) + logo.y * mix3;
                 tz = tz * (1 - mix3) + logo.z * mix3;
@@ -211,7 +203,6 @@
                 posAttr.array[i * 3 + 1] = ty;
                 posAttr.array[i * 3 + 2] = tz;
                 
-                // Цвета: Лого(Белый) -> Лучи(Голубой) -> Эквалайзер(Белый)
                 let r = 1.0, g = 1.0, b = 1.0;
 
                 r = r * (1 - mix1) + 0.3 * mix1;
