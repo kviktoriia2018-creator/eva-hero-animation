@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particles Swarm Export</title>
+    <style>body { margin: 0; overflow: hidden; background: #000; }</style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        const COUNT = 30000;
+        const SPEED_MULT = 0.6;
+        const AUTO_SPIN = true;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 0, 100);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = AUTO_SPIN;
+        controls.autoRotateSpeed = 2.0;
+
+        // ГЕОМЕТРИЯ ТОЧЕК
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(COUNT * 3);
+        const colors = new Float32Array(COUNT * 3);
+        
+        for (let i = 0; i < COUNT; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 100;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+            colors[i * 3] = 1.0;
+            colors[i * 3 + 1] = 1.0;
+            colors[i * 3 + 2] = 1.0;
+        }
+        
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        
+        // Материал точек (размер 0.2 - маленькие точки)
+        const material = new THREE.PointsMaterial({ 
+            size: 0.2, 
+            vertexColors: true, 
+            sizeAttenuation: true,
+            transparent: false
+        });
+
+        const points = new THREE.Points(geometry, material);
+        scene.add(points);
+
+        const PARAMS = {};
+        const addControl = (id, label, min, max, val) => PARAMS[id] !== undefined ? PARAMS[id] : val;
+        const setInfo = () => {};
+        const annotate = () => {};
+
+        const clock = new THREE.Clock();
+        const target = new THREE.Vector3();
+        const color = new THREE.Color();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime() * SPEED_MULT;
+
+            controls.update();
+
+            const count = COUNT;
+            const posAttr = geometry.attributes.position;
+            const colAttr = geometry.attributes.color;
+            
+            for(let i=0; i<COUNT; i++) {
+                 // ВАШ КОД ИНЪЕКЦИИ
+                 const speed = addControl("speed", "Speed", 0, 5, 1.0);
+                 const freq = addControl("freq", "Base Frequency", 1, 15, 4.0);
+                 const amp = addControl("amp", "Amplitude", 0.1, 8, 3.0);
+                 const width = addControl("width", "Spread", 10, 100, 50.0);
+                 const glow = addControl("glow", "Brightness", 0.1, 1.5, 0.3);
+                 const r = addControl("r", "Red", 0.0, 1.0, 1.0);
+                 const g = addControl("g", "Green", 0.0, 1.0, 1.0);
+                 const b = addControl("b", "Blue", 0.0, 1.0, 1.0);
+
+                 const x = (i / (count - 1) - 0.5) * width;
+                 const edge = Math.exp(-Math.pow((x / width) * 4.0, 4));
+
+                 const w = x * freq;
+                 const t = time * speed;
+                 let wave = 0;
+                 wave += Math.sin(w - t) * 1.0;
+                 wave += Math.sin(w * 1.125 + t * 1.3) * 0.7;
+                 wave += Math.sin(w * 1.25 - t * 0.8) * 0.5;
+                 wave += Math.sin(w * 1.5 + t * 1.1) * 0.3;
+                 wave += Math.sin(w * 0.95 - t * 0.6) * 0.4;
+
+                 wave *= amp * edge;
+
+                 target.set(x, wave, 0.0);
+                 color.setRGB(r * glow, g * glow, b * glow);
+                 
+                 if (i === 0) {
+                     setInfo("Light Equalizer", "Ровная линия, колеблющаяся в ритме нот.");
+                     annotate("center", new THREE.Vector3(0, 0, 0), "Equalizer");
+                 }
+                 // КОНЕЦ ВАШЕГО КОДА
+                 
+                 // Прямое обновление позиций и цветов точек
+                 posAttr.array[i * 3] = target.x;
+                 posAttr.array[i * 3 + 1] = target.y;
+                 posAttr.array[i * 3 + 2] = target.z;
+                 
+                 colAttr.array[i * 3] = color.r;
+                 colAttr.array[i * 3 + 1] = color.g;
+                 colAttr.array[i * 3 + 2] = color.b;
+            }
+            
+            posAttr.needsUpdate = true;
+            colAttr.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
